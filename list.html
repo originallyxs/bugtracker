@@ -122,8 +122,11 @@
     #modalOverlay.open #modalBox{
       transform: scale(1);
     }
+    /*弹窗详情文本：保留换行，强制截断超长字符串，禁止横向溢出 */
     .pre-wrap{
       white-space:pre-wrap;
+      word-break:break-all;
+      overflow-wrap:anywhere;
     }
   </style>
 </head>
@@ -172,7 +175,7 @@
 <footer>
   <div class="fixed bottom-0 left-0 right-0 rounded-[12px] overflow-hidden backdrop-blur-[6px] bg-white/50 dark:bg-black/30 py-3 text-center text-gray-800 dark:text-white text-sm">
     <div>
-      Copyright © 2024‑<script>document.write(new Date().getFullYear())</script> OriginallyX Coalition Studio.
+      Copyright © 2024-<script>document.write(new Date().getFullYear())</script> OriginallyX Coalition Studio.
       <br />
       All rights reserved.|
       <a href="https://icp.gov.moe/?keyword=20260627" target="_blank">萌ICP备20260627号</a>
@@ -224,6 +227,11 @@ function escapeHtml(s){
     .replaceAll("'","&#039;");
 }
 
+// 弹窗详情用：转义html同时把\n换行转为<br>
+function escapeWithNl(s){
+  return escapeHtml(s).replaceAll("\n","<br/>");
+}
+
 function formatTimeStamp(sec){
   const d=new Date(sec*1000);
   const y=d.getFullYear();
@@ -256,6 +264,8 @@ function render(dataList){
     const cat=CATEGORY[f.bugType]||"未知";
     const timeStr=formatTimeStamp(f.submitTime);
     const submitName = uidToName[Number(f.accountID)] || "匿名";
+    // 卡片预览：纯文本，换行直接被浏览器合并，line-clamp-4截断
+    const previewText = escapeHtml(f.bugDetail);
     const card=`
 <div class="rounded-[12px] backdrop-blur-[6px] bg-white/40 dark:bg-black/40 p-5 shadow-xl flex flex-col gap-3">
   <div class="flex justify-between items-start">
@@ -265,7 +275,7 @@ function render(dataList){
   <div class="text-sm opacity-80">分类：${escapeHtml(cat)}</div>
   <div class="text-sm opacity-80">提交人：${escapeHtml(submitName)}</div>
   <div class="text-sm opacity-75">提交时间：${escapeHtml(timeStr)}</div>
-  <div class="border-t border-black/15 dark:border-white/15 pt-3 mt-1 text-sm leading-relaxed line-clamp-4">${escapeHtml(f.bugDetail)}</div>
+  <div class="border-t border-black/15 dark:border-white/15 pt-3 mt-1 text-sm leading-relaxed line-clamp-4">${previewText}</div>
   <div class="mt-2">
     <button onclick="openDetail(${f.bugID})" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm transition-all">查看详情</button>
   </div>
@@ -324,6 +334,9 @@ function openDetail(bugId){
   const cat=CATEGORY[f.bugType]||"未知";
   const timeStr=formatTimeStamp(f.submitTime);
   const submitName = uidToName[Number(f.accountID)] || "匿名";
+  //弹窗详情：保留原始换行
+  const detailHtml = escapeWithNl(f.bugDetail);
+  const bugIdShow = `#${escapeHtml(String(f.bugID))}`;
 
   modalBox.innerHTML = `
 <div class="flex justify-between items-start gap-3 mb-4">
@@ -332,15 +345,15 @@ function openDetail(bugId){
 </div>
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm opacity-80 mb-4">
   <div><span class="opacity-60">分类：</span>${escapeHtml(cat)}</div>
-  <div><span class="opacity-60">BugID：</span>${escapeHtml(String(f.bugID))}</div>
   <div><span class="opacity-60">提交人：</span>${escapeHtml(submitName)}</div>
   <div><span class="opacity-60">提交时间：</span>${escapeHtml(timeStr)}</div>
 </div>
 <div class="border-t border-black/15 dark:border-white/15 pt-4">
   <h4 class="serif mb-2">详细描述</h4>
-  <div class="pre-wrap leading-relaxed text-sm">${escapeHtml(f.bugDetail)}</div>
+  <div class="pre-wrap leading-relaxed text-sm">${detailHtml}</div>
 </div>
-<div class="mt-6 text-right">
+<div class="mt-6 flex items-end justify-between">
+  <span class="text-sm opacity-50">${bugIdShow}</span>
   <button onclick="closeModal()" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm">关闭</button>
 </div>
 `;
