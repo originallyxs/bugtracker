@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+  <title>登录 - 初源联盟工作室</title>
+  <script src="https://cdn.jsdelivr.net/npm/argon2-wasm@0.9.0/dist/argon2.wasm.js"></script>
+  <script src="https://cdn.originallyxs.cc.cd/tailwind.js"></script>
+  <link rel="shortcut icon" href="https://cdn.originallyxs.cc.cd/favicon.svg" type="image/svg+xml" />
+  <style>
+    @font-face {
+      font-family: 'CurrentFont';
+      src: url('https://cdn.originallyxs.cc.cd/defaultfont/defaultFont-Regular.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'SerifFont';
+      src: url('https://cdn.originallyxs.cc.cd/defaultfont/defaultFont-Bold.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+    * {
+      font-family: 'CurrentFont', sans-serif !important;
+      user-select: none;
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      min-height: 100vh;
+      overflow: auto;
+    }
+    .serif, blockquote,h1,h2,h3,h4,h5,h6 {
+      font-family: 'SerifFont', serif !important;
+    }
+    #loading-mask {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+      background: #c5cae9;
+    }
+    @media (prefers-color-scheme: dark) {
+      #loading-mask {
+        background: #1a237e;
+      }
+    }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #9fa8da;
+      border-top-color: #283593;
+      border-radius: 50%;
+      transform-origin: center center;
+      animation: spin 0.8s linear infinite;
+    }
+    .loading-footer {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 340px;
+      opacity: 0;
+      transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+    .loading-footer.show {
+      opacity: 1;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    #loading-mask.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+    a {
+      transition: color 0.2s ease;
+    }
+    a:hover {
+      color: #5C6BC0 !important;
+    }
+    a:active {
+      color: #3949AB !important;
+    }
+    .form-input {
+      width: 100%;
+      padding: 0.85rem 1.1rem;
+      border-radius: 16px;
+      background-color: rgba(255,255,255,0.60);
+      border: 1px solid rgba(0,0,0,0.14);
+      outline: none;
+      transition: all 0.28s ease;
+      font-size: 0.95rem;
+    }
+    .dark .form-input {
+      background-color: rgba(40,42,80,0.45);
+      border-color: rgba(124, 127, 255, 0.28);
+      color:#ffffff;
+    }
+    .form-input:hover {
+      border-color:rgba(92, 107, 192, 0.45);
+      background-color:rgba(255,255,255,0.72);
+    }
+    .dark .form-input:hover {
+      background-color:rgba(50,53,95,0.52);
+    }
+    .form-input:focus {
+      border-color:#5C6BC0;
+      box-shadow: 0 0 0 3px rgba(92, 107, 192, 0.22);
+      background-color:rgba(255,255,255,0.80);
+    }
+    .dark .form-input:focus {
+      background-color:rgba(58,60,110,0.58);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35), 0 0 8px rgba(99,102,241,0.20);
+    }
+    .form-label {
+      @apply block mb-1.5 text-sm;
+    }
+    .form-input::placeholder {
+      color:#777777;
+    }
+    .dark .form-input::placeholder {
+      color:#a2a6dd;
+      opacity:0.85;
+    }
+    .input-pwd-wrap{
+      position:relative;
+    }
+    .eye-btn{
+      position:absolute;
+      right:14px;
+      top:50%;
+      transform:translateY(-50%);
+      color:#ccccff;
+      cursor:pointer;
+      font-size:1.1rem;
+    }
+  </style>
+</head>
+<body oncontextmenu="return false;"
+      class="bg-[url('https://cdn.originallyxs.cc.cd/bg/light.jpg')] dark:bg-[url('https://cdn.originallyxs.cc.cd/bg/dark.jpg')] text-gray-900 dark:text-white">
+<noscript>
+  <h1 style="text-align:center;margin-top:120px;">初源联盟工作室</h1>
+  <h2 style="text-align:center">本页面依赖 JavaScript，请开启脚本</h2>
+</noscript>
+
+<div id="loading-mask">
+  <div class="loading-spinner"></div>
+  <div class="loading-footer" id="loadingFooter">
+    <img id="imgLight" src="https://originallyxs.cc.cd/pictures/index/light_footer.png"
+         class="block dark:hidden w-full h-auto" alt="footer">
+    <img id="imgDark" src="https://originallyxs.cc.cd/pictures/index/dark_footer.png"
+         class="hidden dark:block w-full h-auto" alt="footer">
+  </div>
+</div>
+
+<header class="fixed top-0 left-0 right-0 rounded-[12px] backdrop-blur-[6px] bg-white/40 dark:bg-black/40 px-6 py-4 shadow-sm z-20">
+  <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <h1 class="text-[clamp(1.2rem,3vw,1.8rem)] font-medium serif">账号登录</h1>
+    <nav class="flex gap-6">
+      <a href="./index.html">返回</a>
+    </nav>
+  </div>
+</header>
+
+<main class="max-w-md mx-auto pt-36 pb-28 px-4">
+  <div class="rounded-[12px] backdrop-blur-[6px] bg-white/40 dark:bg-black/40 p-7 shadow-xl">
+    <form id="loginForm">
+      <div class="mb-5">
+        <label class="form-label serif">账号 <span class="text-red-500">*</span></label>
+        <input class="form-input" name="account" placeholder="输入账号" required>
+      </div>
+      <div class="mb-6">
+        <label class="form-label serif">密码 <span class="text-red-500">*</span></label>
+        <div class="input-pwd-wrap">
+          <input id="pwdInput" class="form-input" name="password" type="password" placeholder="输入密码" required>
+          <span class="eye-btn" id="toggleEye">👁</span>
+        </div>
+      </div>
+      <div id="loginTip" class="mb-4 text-sm text-red-300 hidden"></div>
+      <button id="loginBtn" type="submit" class="w-full px-6 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-all">
+        登录
+      </button>
+    </form>
+  </div>
+</main>
+
+<footer>
+  <div class="fixed bottom-0 left-0 right-0 rounded-[12px] overflow-hidden backdrop-blur-[6px] bg-white/50 dark:bg-black/30 py-3 text-center text-gray-800 dark:text-white text-sm">
+    Copyright © 2024‑<script>document.write(new Date().getFullYear())</script> OriginallyX Coalition Studio.
+    <br>All rights reserved.
+  </div>
+</footer>
+
+<script>
+tailwind.config = {
+  darkMode:'class',
+  theme:{
+    colors:{
+      indigo:{
+        50:'#E8EAF6',100:'#C5CAE9',200:'#9FA8DA',300:'#7986CB',
+        400:'#5C6BC0',500:'#3F51B5',600:'#3949AB',700:'#303F9F',
+        800:'#283593',900:'#1A237E'
+      },white:'#fff',black:'#000',transparent:'transparent'
+    }
+  }
+};
+
+/**
+ * 【业务页面直接复制该函数】
+ * 校验会话：核对账号存在、核对远端pwd哈希是否等于本地存储hash，密码修改后强制重登录
+ * @returns {Promise<object|null>} 用户信息，失效跳转login
+ */
+async function verifySessionRemote(){
+  const localRaw = localStorage.getItem("loginUser");
+  if(!localRaw) return null;
+  const localUser = JSON.parse(localRaw);
+  if(!localUser || !localUser.account || !localUser.pwdHash){
+    localStorage.removeItem("loginUser");
+    return null;
+  }
+  const res = await fetch("https://accountapi.originallyxs.cc.cd");
+  const json = await res.json();
+  if(!json.ok||!Array.isArray(json.data)){
+    throw new Error("账号接口异常");
+  }
+  const remoteUser = json.data.find(item=> item.fields.account === localUser.account);
+  //账号已经删除
+  if(!remoteUser){
+    localStorage.removeItem("loginUser");
+    window.location.href="./login.html";
+    return null;
+  }
+  //密码哈希变化 = 后台修改密码
+  if(remoteUser.fields.pwd !== localUser.pwdHash){
+    localStorage.removeItem("loginUser");
+    window.location.href="./login.html";
+    return null;
+  }
+  return {
+    uid: remoteUser.fields.uid,
+    account: remoteUser.fields.account,
+    name: remoteUser.fields.name,
+    power: remoteUser.fields.power
+  };
+}
+
+let imgLightOk = false;
+let imgDarkOk = false;
+function checkBothImageReady() {
+  if (imgLightOk && imgDarkOk) {
+    const footerDom = document.getElementById('loadingFooter');
+    if (footerDom) footerDom.classList.add('show');
+  }
+}
+function lightImgLoad() { imgLightOk = true; checkBothImageReady(); }
+function darkImgLoad() { imgDarkOk = true; checkBothImageReady(); }
+
+document.addEventListener('DOMContentLoaded', async function () {
+  const lightImg = document.getElementById('imgLight');
+  const darkImg = document.getElementById('imgDark');
+  if (lightImg) lightImg.onload = lightImgLoad;
+  if (darkImg) darkImg.onload = darkImgLoad;
+  if (lightImg?.complete) lightImgLoad();
+  if (darkImg?.complete) darkImgLoad();
+
+  await argon2.init();
+
+  //密码显隐切换
+  const pwdInput = document.getElementById('pwdInput');
+  const toggleEye = document.getElementById('toggleEye');
+  toggleEye.addEventListener('click', ()=>{
+    if(pwdInput.type === 'password'){
+      pwdInput.type = 'text';
+      toggleEye.textContent = '🙈';
+    }else{
+      pwdInput.type = 'password';
+      toggleEye.textContent = '👁';
+    }
+  });
+
+  const loginForm = document.getElementById('loginForm');
+  const loginBtn = document.getElementById('loginBtn');
+  const loginTip = document.getElementById('loginTip');
+
+  function showTip(msg){
+    loginTip.textContent = msg;
+    loginTip.classList.remove('hidden');
+  }
+  function hideTip(){
+    loginTip.classList.add('hidden');
+  }
+
+  loginForm.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    hideTip();
+    const fd = new FormData(loginForm);
+    const account = fd.get('account').toString().trim();
+    const password = fd.get('password').toString();
+    if(!account || !password){
+      showTip("账号和密码不能为空");
+      return;
+    }
+    loginBtn.disabled = true;
+    loginBtn.textContent = "正在校验…";
+    try{
+      const resp = await fetch("https://accountapi.originallyxs.cc.cd");
+      const json = await resp.json();
+      if(!json.ok || !Array.isArray(json.data)){
+        showTip("账号接口请求失败");
+        loginBtn.disabled = false;
+        loginBtn.textContent = "登录";
+        return;
+      }
+      const userItem = json.data.find(u=>u.fields.account === account);
+      if(!userItem){
+        showTip("该账号不存在");
+        loginBtn.disabled = false;
+        loginBtn.textContent = "登录";
+        return;
+      }
+      const hashStr = userItem.fields.pwd;
+      const verifyOk = await argon2.verify(hashStr, password);
+      if(!verifyOk){
+        showTip("密码错误");
+        loginBtn.disabled = false;
+        loginBtn.textContent = "登录";
+        return;
+      }
+      //登录成功：存储account、uid、name、power、pwdHash（完整argon2串自带salt）
+      localStorage.setItem("loginUser", JSON.stringify({
+        account: userItem.fields.account,
+        uid: userItem.fields.uid,
+        name: userItem.fields.name,
+        power: userItem.fields.power,
+        pwdHash: userItem.fields.pwd
+      }));
+      //跳转业务首页
+      window.location.href="./index.html";
+    }catch(err){
+      console.error(err);
+      showTip("网络异常，请稍后重试");
+      loginBtn.disabled = false;
+      loginBtn.textContent = "登录";
+    }
+  });
+});
+</script>
+</body>
+</html>
