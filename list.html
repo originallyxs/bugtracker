@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+  <title>Bug反馈平台 - 初源联盟工作室</title>
+  <script src="https://cdn.originallyxs.cc.cd/tailwind.js"></script>
+  <link rel="shortcut icon" href="https://cdn.originallyxs.cc.cd/favicon.svg" type="image/svg+xml" />
+  <style>
+    @font-face {
+      font-family: 'CurrentFont';
+      src: url('https://cdn.originallyxs.cc.cd/defaultfont/defaultFont-Regular.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'SerifFont';
+      src: url('https://cdn.originallyxs.cc.cd/defaultfont/defaultFont-Bold.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+    * {
+      font-family: 'CurrentFont', sans-serif !important;
+      user-select: none;
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      min-height: 100vh;
+      overflow: auto;
+    }
+    .serif, blockquote,h1,h2,h3,h4,h5,h6 {
+      font-family: 'SerifFont', serif !important;
+    }
+    #loading-mask {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+      background: #c5cae9;
+    }
+    @media (prefers-color-scheme: dark) {
+      #loading-mask {
+        background: #1a237e;
+      }
+    }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #9fa8da;
+      border-top-color: #283593;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    .loading-footer {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 340px;
+      opacity: 0;
+      transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+    .loading-footer.show {
+      opacity: 1;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    #loading-mask.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+    a {
+      transition: color 0.2s ease;
+    }
+    a:hover {
+      color: #5C6BC0 !important;
+    }
+    a:active {
+      color: #3949AB !important;
+    }
+    .tag-pending{background:#e5737333;color:#c62828;}
+    .tag-fixing{background:#ffd54f33;color:#f57f17;}
+    .tag-fixed{background:#81c78433;color:#2e7d32;}
+    .tag-norepro{background:#ffa72633;color:#ef6c00;}
+    .tag-duplicate{background:#4fc3f733;color:#0277bd;}
+  </style>
+</head>
+<body oncontextmenu="return false;"
+      class="bg-[url('https://cdn.originallyxs.cc.cd/bg/light.jpg')] dark:bg-[url('https://cdn.originallyxs.cc.cd/bg/dark.jpg')] text-gray-900 dark:text-white">
+<noscript>
+  <h1 style="text-align:center;">初源联盟工作室</h1>
+  <h2 style="text-align:center">本页面依赖 JavaScript 运行，请启用或更换浏览器。</h2>
+</noscript>
+
+<div id="loading-mask">
+  <div class="loading-spinner"></div>
+  <div class="loading-footer" id="loadingFooter">
+    <img id="imgLight" src="https://originallyxs.cc.cd/pictures/index/light_footer.png"
+         class="block dark:hidden w-full h-auto" alt="首次加载可能较慢，请耐心等待" />
+    <img id="imgDark" src="https://originallyxs.cc.cd/pictures/index/dark_footer.png"
+         class="hidden dark:block w-full h-auto" alt="首次加载可能较慢，请耐心等待" />
+  </div>
+</div>
+
+<header class="fixed top-0 left-0 right-0 rounded-[12px] backdrop-blur-[6px] bg-white/40 dark:bg-black/40 px-6 py-4 shadow-sm z-20">
+  <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <h1 class="text-[clamp(1.2rem,3vw,1.8rem)] font-medium serif text-gray-900 dark:text-white">Bug 反馈列表</h1>
+    <nav class="flex gap-6">
+      <a href="https://originallyxs.cc.cd" class="text-gray-900 dark:text-white">回主站</a>
+    </nav>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto pt-24 pb-28 px-4">
+  <div id="bugListWrap" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+  <div id="stateTip" class="mt-20 text-center opacity-70 text-lg hidden"></div>
+</main>
+
+<div class="fixed bottom-24 right-4 z-20">
+  <button onclick="location.href='./submit.html'" class="w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl flex items-center justify-center text-2xl active:scale-95 transition-all">
+    <svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><g id="add_line" fill='none'><path d='M24 0v24H0V0zM12.593 23.258l-.011.002-.071.035-.02.004-.014-.004-.071-.035c-.01-.004-.019-.001-.024.005l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427c-.002-.01-.009-.017-.017-.018m.265-.113-.013.002-.185.093-.01.01-.003.011.018.43.005.012.008.007.201.093c.012.004.023 0 .029-.008l.004-.014-.034-.614c-.003-.012-.01-.02-.02-.022m-.715.002a.023.023 0 0 0-.027.006l-.006.014-.034.614c0 .012.007.02.017.024l.015-.002.201-.093.01-.008.004-.011.017-.43-.003-.012-.01-.01z'/><path fill='currentColor' d='M11 20a1 1 0 1 0 2 0v-7h7a1 1 0 1 0 0-2h-7V4a1 1 0 1 0-2 0v7H4a1 1 0 1 0 0 2h7z'/></g></svg>
+  </button>
+</div>
+
+<footer>
+  <div class="fixed bottom-0 left-0 right-0 rounded-[12px] overflow-hidden backdrop-blur-[6px] bg-white/50 dark:bg-black/30 py-3 text-center text-gray-800 dark:text-white text-sm">
+    <div>
+      Copyright © 2024‑<script>document.write(new Date().getFullYear())</script> OriginallyX Coalition Studio.
+      <br />
+      All rights reserved.|
+      <a href="https://icp.gov.moe/?keyword=20260627" target="_blank">萌ICP备20260627号</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+tailwind.config = {
+  darkMode: 'media',
+  theme: {
+    colors: {
+      indigo:{50:'#E8EAF6',100:'#C5CAE9',200:'#9FA8DA',300:'#7986CB',400:'#5C6BC0',500:'#3F51B5',600:'#3949AB',700:'#303F9F',800:'#283593',900:'#1A237E'},
+      white:'#fff',black:'#000',transparent:'transparent'
+    }
+  }
+};
+
+const API_BUG = "https://bugapi.originallyxs.cc.cd";
+const API_ACCOUNT = "https://accountapi.originallyxs.cc.cd";
+
+const STATUS = [
+  {text:"待处理", cls:"tag-pending"},
+  {text:"正在修复", cls:"tag-fixing"},
+  {text:"已修复", cls:"tag-fixed"},
+  {text:"无法复现", cls:"tag-norepro"},
+  {text:"重复提交", cls:"tag-duplicate"}
+];
+
+const CATEGORY = ["其他","UI界面","安全问题","性能问题"];
+
+let imgLightOk = false, imgDarkOk = false;
+/** uid -> name 映射表 */
+let uidToName = {};
+
+function checkImgReady(){
+  if(imgLightOk && imgDarkOk) document.getElementById("loadingFooter").classList.add("show");
+}
+function lightLoad(){imgLightOk=true;checkImgReady();}
+function darkLoad(){imgDarkOk=true;checkImgReady();}
+
+function escapeHtml(s){
+  if(!s) return "";
+  return String(s)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+function formatTimeStamp(sec){
+  const d=new Date(sec*1000);
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,"0");
+  const day=String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+
+function setTip(text){
+  const tipDom=document.getElementById("stateTip");
+  tipDom.textContent=text;
+  tipDom.classList.remove("hidden");
+}
+function hideTip(){
+  document.getElementById("stateTip").classList.add("hidden");
+}
+
+function render(dataList){
+  const wrap=document.getElementById("bugListWrap");
+  wrap.innerHTML="";
+  if(!dataList||dataList.length===0){
+    setTip("暂无反馈记录");
+    return;
+  }
+  hideTip();
+  dataList.forEach(item=>{
+    const f=item.fields;
+    const st=STATUS[f.bugStatus]||STATUS[0];
+    const cat=CATEGORY[f.bugType]||"未知";
+    const timeStr=formatTimeStamp(f.submitTime);
+    // 通过bug里的accountID(uid)，从账号映射表取name
+    const submitName = uidToName[Number(f.accountID)] || "匿名";
+    const card=`
+<div class="rounded-[12px] backdrop-blur-[6px] bg-white/40 dark:bg-black/40 p-5 shadow-xl flex flex-col gap-3">
+  <div class="flex justify-between items-start">
+    <h3 class="text-lg font-medium serif">${escapeHtml(f.bugTitle)}</h3>
+    <span class="px-2 py-1 rounded text-xs font-medium ${st.cls}">${escapeHtml(st.text)}</span>
+  </div>
+  <div class="text-sm opacity-80">分类：${escapeHtml(cat)}</div>
+  <div class="text-sm opacity-80">提交人：${escapeHtml(submitName)}</div>
+  <div class="text-sm opacity-75">提交时间：${escapeHtml(timeStr)}</div>
+  <div class="border-t border-black/15 dark:border-white/15 pt-3 mt-1 text-sm leading-relaxed line-clamp-4">${escapeHtml(f.bugDetail)}</div>
+  <div class="mt-2">
+    <button onclick="openDetail(${f.bugID})" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm transition-all">查看详情</button>
+  </div>
+</div>`;
+    wrap.innerHTML+=card;
+  });
+}
+
+async function fetchBugList(){
+  setTip("加载数据中…");
+  const mask = document.getElementById("loading-mask");
+  try {
+    // 1.拉账号列表构建uid-name映射
+    const accResp = await fetch(API_ACCOUNT);
+    const accJson = await accResp.json();
+    if(accJson.ok && Array.isArray(accJson.data)){
+      uidToName = {};
+      accJson.data.forEach(acc=>{
+        const fd = acc.fields;
+        uidToName[Number(fd.uid)] = fd.name;
+      })
+    }
+    // 2.拉bug列表
+    const bugResp=await fetch(API_BUG);
+    const bugJson=await bugResp.json();
+    if(bugJson.ok===true){
+      render(bugJson.data);
+    }else{
+      setTip("获取反馈列表失败");
+    }
+  }catch(e){
+    console.error(e);
+    setTip("网络异常，无法连接接口");
+  }finally{
+    mask.classList.add("fade-out");
+    setTimeout(()=>mask.remove(),800);
+  }
+}
+
+function openDetail(id){
+  location.href =`./detail.html?bugid=${id}`;
+}
+
+
+document.addEventListener("DOMContentLoaded",()=>{
+  const imgL=document.getElementById("imgLight");
+  const imgD=document.getElementById("imgDark");
+  if(imgL){ imgL.onload=lightLoad; if(imgL.complete) lightLoad(); }
+  if(imgD){ imgD.onload=darkLoad; if(imgD.complete) darkLoad(); }
+  fetchBugList();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+  <title>提交Bug反馈 - 初源联盟工作室</title>
+  <script src="https://cdn.originallyxs.cc.cd/tailwind.js"></script>
+  <link rel="shortcut icon" href="https://cdn.originallyxs.cc.cd/favicon.svg" type="image/svg+xml" />
+  <style>
+    @font-face {
+      font-family: 'CurrentFont';
+      src: url('https://cdn.originallyxs.cc.cd/defaultfont/defaultFont-Regular.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'SerifFont';
+      src: url('https://cdn.originallyxs.cc.cd/defaultfont/defaultFont-Bold.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+    * {
+      font-family: 'CurrentFont', sans-serif !important;
+      user-select: none;
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      min-height: 100vh;
+      overflow: auto;
+    }
+    .serif, blockquote,h1,h2,h3,h4,h5,h6 {
+      font-family: 'SerifFont', serif !important;
+    }
+    #loading-mask {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+      background: #c5cae9;
+    }
+    @media (prefers-color-scheme: dark) {
+      #loading-mask {
+        background: #1a237e;
+      }
+    }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #9fa8da;
+      border-top-color: #283593;
+      border-radius: 50%;
+      transform-origin: center center;
+      animation: spin 0.8s linear infinite;
+    }
+    .loading-footer {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 340px;
+      opacity: 0;
+      transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+    .loading-footer.show {
+      opacity: 1;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    #loading-mask.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+    a {
+      transition: color 0.2s ease;
+    }
+    a:hover {
+      color: #5C6BC0 !important;
+    }
+    a:active {
+      color: #3949AB !important;
+    }
+    /*表单样式*/
+    .form-input {
+      width: 100%;
+      padding: 0.85rem 1.1rem;
+      border-radius: 16px;
+      background-color: rgba(255,255,255,0.60);
+      border: 1px solid rgba(0,0,0,0.14);
+      outline: none;
+      transition: all 0.28s ease;
+      font-size: 0.95rem;
+    }
+    .dark .form-input {
+      background-color: rgba(0,0,0,0.40);
+      border-color: rgba(255,255,255,0.16);
+      color:#ffffff;
+    }
+    .form-input:hover {
+      border-color:rgba(92, 107, 192, 0.45);
+      background-color:rgba(255,255,255,0.72);
+    }
+    .dark .form-input:hover {
+      background-color:rgba(0,0,0,0.48);
+    }
+    .form-input:focus {
+      border-color:#5C6BC0;
+      box-shadow: 0 0 0 3px rgba(92, 107, 192, 0.22);
+      background-color:rgba(255,255,255,0.80);
+    }
+    .dark .form-input:focus {
+      background-color:rgba(0,0,0,0.54);
+      box-shadow: 0 0 0 3px rgba(92, 107, 192, 0.35);
+    }
+    textarea.form-input {
+      min-height:140px;
+      resize:vertical;
+    }
+    .form-label {
+      @apply block mb-1.5 text-sm;
+    }
+  </style>
+</head>
+<body oncontextmenu="return false;"
+      class="bg-[url('https://cdn.originallyxs.cc.cd/bg/light.jpg')] dark:bg-[url('https://cdn.originallyxs.cc.cd/bg/dark.jpg')] text-gray-900 dark:text-white">
+<noscript>
+  <title>请先启用 JavaScript 再访问此页面。</title>
+  <h1 style="text-align:center;">初源联盟工作室</h1>
+  <h2 style="text-align:center">本页面依赖 JavaScript 运行，请启用或更换浏览器。</h2>
+</noscript>
+
+<div id="loading-mask">
+  <div class="loading-spinner"></div>
+  <div class="loading-footer" id="loadingFooter">
+    <img id="imgLight" src="https://originallyxs.cc.cd/pictures/index/light_footer.png"
+         class="block dark:hidden w-full h-auto" alt="首次加载可能较慢，请耐心等待" />
+    <img id="imgDark" src="https://originallyxs.cc.cd/pictures/index/dark_footer.png"
+         class="hidden dark:block w-full h-auto" alt="首次加载可能较慢，请耐心等待" />
+  </div>
+</div>
+
+<!-- 头部导航栏 -->
+<header class="fixed top-0 left-0 right-0 rounded-[12px] backdrop-blur-[6px] bg-white/40 dark:bg-black/40 px-6 py-4 shadow-sm z-20">
+  <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <h1 class="text-[clamp(1.2rem,3vw,1.8rem)] font-medium serif text-gray-900 dark:text-white">提交Bug反馈</h1>
+    <nav class="flex gap-6">
+      <a href="./index.html" class="text-gray-900 dark:text-white">返回反馈列表</a>
+    </nav>
+  </div>
+</header>
+
+<!--主容器：提交表单-->
+<main class="max-w-2xl mx-auto pt-28 pb-28 px-4">
+  <div class="rounded-[12px] backdrop-blur-[6px] bg-white/40 dark:bg-black/40 p-6 shadow-xl">
+    <form id="bugSubmitForm">
+      <!--1.设备操作系统及版本号-->
+      <div class="mb-5">
+        <label class="form-label serif">设备操作系统及版本号 <span class="text-red-500">*</span></label>
+        <input type="text" name="osVersion" class="form-input" placeholder="例如：Windows11 24H2 / Android14 / iOS18" required>
+      </div>
+
+      <!--2.bug标题-->
+      <div class="mb-5">
+        <label class="form-label serif">Bug标题 <span class="text-red-500">*</span></label>
+        <input type="text" name="bugTitle" class="form-input" placeholder="简短描述出现什么问题" required>
+      </div>
+
+      <!--3.分类下拉-->
+      <div class="mb-5">
+        <label class="form-label serif">Bug分类 <span class="text-red-500">*</span></label>
+        <select name="bugCategory" class="form-input" required>
+          <option value="">请选择分类</option>
+          <option value="UI界面">UI界面</option>
+          <option value="网络问题">网络问题</option>
+          <option value="功能异常">功能异常</option>
+          <option value="性能卡顿">性能卡顿</option>
+          <option value="安全问题">安全问题</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+
+      <!--4.邮箱，提示登录后自动填充-->
+      <div class="mb-5">
+        <label class="form-label serif">联系邮箱 <span class="text-red-500">*</span> <span class="text-xs opacity-70">（登录后自动填充）</span></label>
+        <input type="email" name="email" class="form-input" placeholder="用于接收处理回复，请登录账号" required>
+      </div>
+
+      <!--可选：bug详细描述（建议加上）-->
+      <div class="mb-6">
+        <label class="form-label serif">Bug详细描述</label>
+        <textarea name="bugDesc" rows="5" class="form-input resize-none" placeholder="详细描述复现步骤、发生现象、预期结果等"></textarea>
+      </div>
+
+      <div class="flex gap-3">
+        <button type="submit" class="px-6 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-all">提交反馈</button>
+        <button type="reset" class="px-6 py-3 rounded-lg bg-black/15 dark:bg-white/15 hover:bg-black/25 dark:hover:bg-white/25 transition-all">重置表单</button>
+      </div>
+    </form>
+  </div>
+</main>
+
+<!--底部版权footer-->
+<footer>
+  <div class="fixed bottom-0 left-0 right-0 rounded-[12px] overflow-hidden backdrop-blur-[6px] bg-white/50 dark:bg-black/30 py-3 text-center text-gray-800 dark:text-white text-sm">
+    <div>
+      Copyright © 2024‑<script>document.write(new Date().getFullYear())</script> OriginallyX Coalition Studio.
+      <br />
+      All rights reserved.|
+      <a href="https://icp.gov.moe/?keyword=20260627" target="_blank">萌ICP备20260627号</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+tailwind.config = {
+  darkMode: 'media',
+  theme: {
+    colors: {
+      indigo: {
+        50: '#E8EAF6',
+        100: '#C5CAE9',
+        200: '#9FA8DA',
+        300: '#7986CB',
+        400: '#5C6BC0',
+        500: '#3F51B5',
+        600: '#3949AB',
+        700: '#303F9F',
+        800: '#283593',
+        900: '#1A237E',
+      },
+      white: '#fff',
+      black: '#000',
+      transparent: 'transparent'
+    }
+  }
+};
+
+let imgLightOk = false;
+let imgDarkOk = false;
+
+function checkBothImageReady() {
+  if (imgLightOk && imgDarkOk) {
+    const footerDom = document.getElementById('loadingFooter');
+    if (footerDom) footerDom.classList.add('show');
+  }
+}
+function lightImgLoad() { imgLightOk = true; checkBothImageReady(); }
+function darkImgLoad() { imgDarkOk = true; checkBothImageReady(); }
+
+document.addEventListener('DOMContentLoaded', function () {
+  const lightImg = document.getElementById('imgLight');
+  const darkImg = document.getElementById('imgDark');
+  if (lightImg) lightImg.onload = lightImgLoad;
+  if (darkImg) darkImg.onload = darkImgLoad;
+  if (lightImg?.complete) lightImgLoad();
+  if (darkImg?.complete) darkImgLoad();
+
+  // 表单提交事件
+  const form = document.getElementById('bugSubmitForm');
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    const formData = new FormData(form);
+    const payload = Object.fromEntries(formData);
+    console.log("提交表单数据：",payload);
+
+    // =========这里替换为后端fetch axios提交接口========
+    alert(`表单校验通过！\n操作系统：${payload.osVersion}\n标题：${payload.bugTitle}\n分类：${payload.bugCategory}\n邮箱：${payload.email}\n\n此处对接后端接口保存数据`);
+
+    // 提交成功后跳转回列表页
+    // location.href="./index.html";
+  })
+
+  /*
+  // 如果已登录，后端返回邮箱，JS自动填充示例：
+  // document.querySelector("[name=email]").value = loginUserEmail;
+  */
+});
+
+window.addEventListener('load', function () {
+  setTimeout(() => {
+    const mask = document.getElementById('loading-mask');
+    if (mask) {
+      mask.classList.add('fade-out');
+      setTimeout(() => mask.remove(), 800);
+    }
+  }, 200);
+});
+
+</script>
+</body>
+</html>

@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+  <title>Bug反馈平台 - 初源联盟工作室</title>
+  <script src="https://cdn.originallyxs.cc.cd/tailwind.js"></script>
+  <link rel="shortcut icon" href="https://cdn.originallyxs.cc.cd/favicon.svg" type="image/svg+xml" />
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    @font-face {
+      font-family: 'CurrentFont';
+      src: url('https://cdn.originallyxs.cc.cd/defaultfont/defaultFont-Regular.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'SerifFont';
+      src: url('https://cdn.originallyxs.cc.cd/defaultfont/defaultFont-Bold.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+    * {
+      font-family: 'CurrentFont', sans-serif !important;
+      user-select: none;
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      min-height: 100vh;
+      overflow: auto;
+    }
+    .serif, blockquote,h1,h2,h3,h4,h5,h6 {
+      font-family: 'SerifFont', serif !important;
+    }
+    #loading-mask {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+      background: #c5cae9;
+    }
+    @media (prefers-color-scheme: dark) {
+      #loading-mask {
+        background: #1a237e;
+      }
+    }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #9fa8da;
+      border-top-color: #283593;
+      border-radius: 50%;
+      transform-origin: center center;
+      animation: spin 0.8s linear infinite;
+    }
+    .loading-footer {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 340px;
+      opacity: 0;
+      transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+    .loading-footer.show {
+      opacity: 1;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    #loading-mask.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+    a {
+      transition: color 0.2s ease;
+    }
+    a:hover {
+      color: #5C6BC0 !important;
+    }
+    .handler-progress-outer{
+      width:100%;
+      height:10px;
+      border-radius:5px;
+      overflow:hidden;
+      display:flex;
+      background:#283593;
+    }
+    .progress-seg{
+      height:100%;
+    }
+    .seg-red{background:#e57373;}
+    .seg-yellow{background:#ffd54f;}
+    .seg-green{background:#81c784;}
+    .seg-grey{background:#ffa726;}
+    .seg-purple{background:#29b6f6;}
+  </style>
+</head>
+<body oncontextmenu="return false;"
+      class="bg-[url('https://cdn.originallyxs.cc.cd/bg/light.jpg')] dark:bg-[url('https://cdn.originallyxs.cc.cd/bg/dark.jpg')] text-gray-900 dark:text-white">
+<noscript>
+  <title>请先启用 JavaScript 再访问此页面。</title>
+  <h1 style="text-align:center;">初源联盟工作室</h1>
+  <h2 style="text-align:center">本页面依赖 JavaScript 运行，请启用或更换浏览器。</h2>
+</noscript>
+
+<div id="loading-mask">
+  <div class="loading-spinner"></div>
+  <div class="loading-footer" id="loadingFooter">
+    <img id="imgLight" src="https://originallyxs.cc.cd/pictures/index/light_footer.png"
+         class="block dark:hidden w-full h-auto" alt="首次加载可能较慢，请耐心等待" />
+    <img id="imgDark" src="https://originallyxs.cc.cd/pictures/index/dark_footer.png"
+         class="hidden dark:block w-full h-auto" alt="首次加载可能较慢，请耐心等待" />
+  </div>
+</div>
+
+<header class="fixed top-0 left-0 right-0 rounded-[12px] backdrop-blur-[6px] bg-white/40 dark:bg-black/40 px-6 py-4 shadow-sm z-20">
+  <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <h1 class="text-[clamp(1.2rem,3vw,1.8rem)] font-medium serif text-gray-900 dark:text-white">Bug 反馈平台</h1>
+    <nav class="flex gap-6">
+      <a href="https://originallyxs.cc.cd" class="text-gray-900 dark:text-white">回主站</a>
+    </nav>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto pt-24 pb-28 px-4">
+  <!-- 统计卡片容器，JS内statCardMeta配置颜色背景，图标占位槽在JS模板字符串内 -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-4" id="statCardWrap">
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+    <div class="rounded-[12px] backdrop-blur-[6px] bg-white/40 dark:bg-black/40 p-4 shadow-xl">
+      <div class="flex items-center gap-2 mb-3">
+        <!-- 【此处放置每周Bug趋势图标】 -->
+        <span class="text-black dark:text-white text-xl">
+<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><g id="chart_line_line" fill='none'><path d='M24 0v24H0V0zM12.593 23.258l-.011.002-.071.035-.02.004-.014-.004-.071-.035c-.01-.004-.019-.001-.024.005l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427c-.002-.01-.009-.017-.017-.018m.265-.113-.013.002-.185.093-.01.01-.003.011.018.43.005.012.008.007.201.093c.012.004.023 0 .029-.008l.004-.014-.034-.614c-.003-.012-.01-.02-.02-.022m-.715.002a.023.023 0 0 0-.027.006l-.006.014-.034.614c0 .012.007.02.017.024l.015-.002.201-.093.01-.008.004-.011.017-.43-.003-.012-.01-.01z'/><path fill='currentColor' d='M4 4a1 1 0 0 1 .993.883L5 5v13h15a1 1 0 0 1 .117 1.993L20 20H4a1 1 0 0 1-.993-.883L3 19V5a1 1 0 0 1 1-1m16.194 2.818c.9 0 1.35 1.088.714 1.724l-5.57 5.57a1.1 1.1 0 0 1-1.555 0l-2.758-2.758-3.535 3.535a1 1 0 0 1-1.415-1.414l4.172-4.172a1.1 1.1 0 0 1 1.556 0l2.758 2.758 3.242-3.243h-.414a1 1 0 1 1 0-2z'/></g></svg>
+        </span>
+        <span class="text-base font-medium">每周 Bug 趋势</span>
+      </div>
+      <div id="lineChart" style="width:100%;height:360px;"></div>
+    </div>
+    <div class="rounded-[12px] backdrop-blur-[12px] bg-white/40 dark:bg-black/40 p-4 shadow-xl">
+      <div class="flex items-center gap-2 mb-3">
+        <!-- 【此处放置Bug分类分布图标】 -->
+        <span class="text-black dark:text-white text-xl">
+<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><g id="chart_pie_2_line" fill='none' fill-rule='evenodd'><path d='M24 0v24H0V0zM12.594 23.258l-.012.002-.071.035-.02.004-.014-.004-.071-.036c-.01-.003-.019 0-.024.006l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427c-.002-.01-.009-.017-.016-.018m.264-.113-.014.002-.184.093-.01.01-.003.011.018.43.005.012.008.008.201.092c.012.004.023 0 .029-.008l.004-.014-.034-.614c-.003-.012-.01-.02-.02-.022m-.715.002a.023.023 0 0 0-.027.006l-.006.014-.034.614c0 .012.007.02.017.024l.015-.002.201-.093.01-.008.003-.011.018-.43-.003-.012-.01-.01z'/><path fill='currentColor' d='M12 2a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1c0-5.523-4.477-10-10-10m1 9V4.062A8.004 8.004 0 0 1 19.938 11zM8.89 4.627a1 1 0 0 0-.78-1.842A10.003 10.003 0 0 0 2 12c0 5.523 4.477 10 10 10 4.145 0 7.699-2.522 9.215-6.11a1 1 0 1 0-1.842-.78A8.002 8.002 0 0 1 4 12a8.003 8.003 0 0 1 4.89-7.373'/></g></svg>
+        </span>
+        <span class="text-base font-medium">Bug 分类分布</span>
+      </div>
+      <div id="pieChart" style="width:100%;height:360px;"></div>
+    </div>
+  </div>
+
+  <div class="rounded-[12px] backdrop-blur-[12px] bg-white/40 dark:bg-black/40 p-4 shadow-xl flex flex-col gap-3.5">
+    <div class="flex items-center gap-2 text-2xl font-medium mb-5">
+      <!-- 【此处放置处理人工作量图标】 -->
+      <span class="text-black dark:text-white text-2xl">
+<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><g id="tool_line" fill='none' fill-rule='evenodd'><path d='M24 0v24H0V0zM12.593 23.258l-.011.002-.071.035-.02.004-.014-.004-.071-.035c-.01-.004-.019-.001-.024.005l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427c-.002-.01-.009-.017-.017-.018m.265-.113-.013.002-.185.093-.01.01-.003.011.018.43.005.012.008.007.201.093c.012.004.023 0 .029-.008l.004-.014-.034-.614c-.003-.012-.01-.02-.02-.022m-.715.002a.023.023 0 0 0-.027.006l-.006.014-.034.614c0 .012.007.02.017.024l.015-.002.201-.093.01-.008.004-.011.017-.43-.003-.012-.01-.01z'/><path fill='currentColor' d='M6.798 2.884a7.002 7.002 0 0 1 9.294 8.565l4.394 3.718a3.76 3.76 0 1 1-5.3 5.3l-3.717-4.394a7.002 7.002 0 0 1-8.565-9.295c.358-.894 1.48-1.007 2.063-.373L8.17 9.883l1.446-.288.29-1.449-3.48-3.198c-.634-.583-.522-1.706.373-2.064ZM8.805 4.42l2.763 2.54c.322.296.466.738.38 1.165l-.47 2.354a1.25 1.25 0 0 1-.982.981l-2.35.467a1.25 1.25 0 0 1-1.164-.38L4.438 8.785a5.002 5.002 0 0 0 6.804 5.25 1.257 1.257 0 0 1 1.422.355l4.05 4.786a1.76 1.76 0 1 0 2.48-2.48l-4.785-4.05a1.257 1.257 0 0 1-.355-1.422 5.001 5.001 0 0 0-5.25-6.804Z'/></g></svg>
+      </span>
+      <span>处理人工作量</span>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="handlerWrap">
+    </div>
+  </div>
+
+  <button onclick="location.href='./list.html'" class="mt-3 w-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 transition-all text-white px-6 py-3 rounded-[12px] font-medium flex items-center justify-center gap-2">
+    <!-- 【此处放置查看反馈按钮图标】 -->
+    <span>
+<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><g id="finger_press_line" fill='none'><path d='M24 0v24H0V0zM12.593 23.258l-.011.002-.071.035-.02.004-.014-.004-.071-.035c-.01-.004-.019-.001-.024.005l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427c-.002-.01-.009-.017-.017-.018m.265-.113-.013.002-.185.093-.01.01-.003.011.018.43.005.012.008.007.201.093c.012.004.023 0 .029-.008l.004-.014-.034-.614c-.003-.012-.01-.02-.02-.022m-.715.002a.023.023 0 0 0-.027.006l-.006.014-.034.614c0 .012.007.02.017.024l.015-.002.201-.093.01-.008.004-.011.017-.43-.003-.012-.01-.01z'/><path fill='currentColor' d='M10.5 6a2.5 2.5 0 0 1 2.495 2.336L13 8.5v4.605l4.455.606a4 4 0 0 1 3.54 3.772l.005.202V18a7.974 7.974 0 0 1-.77 3.43 1 1 0 0 1-1.807-.86 5.961 5.961 0 0 0 .57-2.265L19 18v-.315a2 2 0 0 0-1.621-1.964l-.183-.027-4.431-.603a2 2 0 0 1-1.759-1.827L11 13.105V8.5a.5.5 0 0 0-.992-.09L10 8.5V17a1 1 0 0 1-1.78.625l-.332-.407-.303-.354c-.579-.657-1.001-1.02-1.36-1.203a1.192 1.192 0 0 0-.694-.137l-.141.02 2.504 5.009a1 1 0 0 1-1.73.996l-.058-.102-2.777-5.553c-.36-.72-.093-1.683.747-2.028 1.043-.427 2.034-.506 3.055.012.222.113.44.252.654.414l.215.17V8.5A2.5 2.5 0 0 1 10.5 6m0-4a6.5 6.5 0 0 1 6.255 8.272 1 1 0 1 1-1.924-.544 4.5 4.5 0 1 0-8.34.817 1 1 0 0 1-1.782.91A6.5 6.5 0 0 1 10.5 2'/></g></svg>
+    </span>
+    <span>点按以查看大家的反馈</span>
+  </button>
+</main>
+
+<div class="fixed bottom-24 right-4 z-20">
+  <button onclick="location.href='./submit.html'" class="w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl flex items-center justify-center text-2xl active:scale-95 transition-all">
+    <!-- 【此处放置右下角悬浮提交按钮图标】 -->
+    <span>
+<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><g id="add_line" fill='none'><path d='M24 0v24H0V0zM12.593 23.258l-.011.002-.071.035-.02.004-.014-.004-.071-.035c-.01-.004-.019-.001-.024.005l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427c-.002-.01-.009-.017-.017-.018m.265-.113-.013.002-.185.093-.01.01-.003.011.018.43.005.012.008.007.201.093c.012.004.023 0 .029-.008l.004-.014-.034-.614c-.003-.012-.01-.02-.02-.022m-.715.002a.023.023 0 0 0-.027.006l-.006.014-.034.614c0 .012.007.02.017.024l.015-.002.201-.093.01-.008.004-.011.017-.43-.003-.012-.01-.01z'/><path fill='currentColor' d='M11 20a1 1 0 1 0 2 0v-7h7a1 1 0 1 0 0-2h-7V4a1 1 0 1 0-2 0v7H4a1 1 0 1 0 0 2h7z'/></g></svg>
+    </span>
+  </button>
+</div>
+
+<footer>
+  <div class="fixed bottom-0 left-0 right-0 rounded-[12px] overflow-hidden backdrop-blur-[6px] bg-white/50 dark:bg-black/30 py-3 text-center text-gray-800 dark:text-white text-sm">
+    <div>
+      Copyright © 2024‑<script>document.write(new Date().getFullYear())</script> OriginallyX Coalition Studio.
+      <br />
+      All rights reserved.|
+      <a href="https://icp.gov.moe/?keyword=20260627" target="_blank">萌ICP备20260627号</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+tailwind.config = {
+  darkMode: 'media',
+  theme: {
+    colors: {
+      indigo: {
+        50: '#E8EAF6',
+        100: '#C5CAE9',
+        200: '#9FA8DA',
+        300: '#7986CB',
+        400: '#5C6BC0',
+        500: '#3F51B5',
+        600: '#3949AB',
+        700: '#303F9F',
+        800: '#283593',
+        900: '#1A237E',
+      },
+      white: '#fff',
+      black: '#000',
+      transparent: 'transparent'
+    }
+  }
+};
+
+// 统计卡片配置
+// iconHtml字段填入你的svg，卡片渲染时插入此处
+const statCardMeta = [
+  {
+    bg:"#7e57c230",
+    color:"#9575cd",
+    iconHtml:"<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><g id=\"bug_line\" fill='none'><path d='M24 0v24H0V0zM12.593 23.258l-.011.002-.071.035-.02.004-.014-.004-.071-.035c-.01-.004-.019-.001-.024.005l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427c-.002-.01-.009-.017-.017-.018m.265-.113-.013.002-.185.093-.01.01-.003.011.018.43.005.012.008.007.201.093c.012.004.023 0 .029-.008l.004-.014-.034-.614c-.003-.012-.01-.02-.02-.022m-.715.002a.023.023 0 0 0-.027.006l-.006.014-.034.614c0 .012.007.02.017.024l.015-.002.201-.093.01-.008.004-.011.017-.43-.003-.012-.01-.01z'/><path fill='currentColor' d='M20.447 6.106a1 1 0 0 1 .447 1.341c-.353.707-1 1.326-1.652 1.76-.291.194-.62.376-.966.517.29.71.499 1.475.616 2.276H21a1 1 0 1 1 0 2h-2.012a9.996 9.996 0 0 1-.74 3.327c.572.33.963.86 1.209 1.35A5.5 5.5 0 0 1 20 21a1 1 0 0 1-1.993.117L18 21c0-.374-.101-.966-.332-1.428-.13-.26-.26-.409-.385-.489C16.03 20.844 14.177 22 12 22c-2.177 0-4.03-1.156-5.283-2.917-.126.08-.255.23-.385.49A3.514 3.514 0 0 0 6 21a1 1 0 1 1-2 0 5.5 5.5 0 0 1 .543-2.322c.246-.492.637-1.02 1.209-1.35A9.995 9.995 0 0 1 5.012 14H3a1 1 0 1 1 0-2h2.108a9.78 9.78 0 0 1 .616-2.276 5.482 5.482 0 0 1-.966-.517c-.651-.434-1.3-1.053-1.652-1.76a1 1 0 0 1 1.73-.996l.058.102c.147.293.5.674.973.99C6.353 7.867 6.781 8 7 8h10c.219 0 .647-.133 1.133-.457.415-.277.736-.603.908-.876l.065-.114a1 1 0 0 1 1.341-.447M16.208 10H7.792C7.294 11.004 7 12.202 7 13.5c0 3.309 1.837 5.773 4 6.364V13a1 1 0 1 1 2 0v6.864c2.163-.591 4-3.055 4-6.364 0-1.298-.294-2.496-.792-3.5M12 3a4.998 4.998 0 0 1 4.33 2.5L17.2 7H6.8l.869-1.5A4.998 4.998 0 0 1 12 3'/></g></svg>",
+    field:"total",
+    label:"总收集 Bug 数量"
+  },
+  {
+    bg:"#ef535030",
+    color:"#e57373",
+    iconHtml:"<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><g id=\"to_do_line\" fill='none' fill-rule='evenodd'><path d='M24 0v24H0V0zM12.594 23.258l-.012.002-.071.035-.02.004-.014-.004-.071-.036c-.01-.003-.019 0-.024.006l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427c-.002-.01-.009-.017-.016-.018m.264-.113-.014.002-.184.093-.01.01-.003.011.018.43.005.012.008.008.201.092c.012.004.023 0 .029-.008l.004-.014-.034-.614c-.003-.012-.01-.02-.02-.022m-.715.002a.023.023 0 0 0-.027.006l-.006.014-.034.614c0 .012.007.02.017.024l.015-.002.201-.093.01-.008.003-.011.018-.43-.003-.012-.01-.01z'/><path fill='currentColor' d='M4 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6h-2V4H6v16h5v2H6a2 2 0 0 1-2-2zm4 4a1 1 0 0 1 1-1h6a1 1 0 1 1 0 2H9a1 1 0 0 1-1-1m0 4a1 1 0 0 1 1-1h1a1 1 0 1 1 0 2H9a1 1 0 0 1-1-1m9 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6m-5 3a5 5 0 1 1 10 0 5 5 0 0 1-10 0m5-2.5a1 1 0 0 1 1 1v.5a1 1 0 1 1 0 2h-1a1 1 0 0 1-1-1v-1.5a1 1 0 0 1 1-1'/></g></svg>",
+    field:"pending",
+    label:"待处理"
+  },
+  {
+    bg:"#ffca2830",
+    color:"#ffd54f",
+    iconHtml:"<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><g id=\"refresh_2_line\" fill='none'><path d='M24 0v24H0V0zM12.593 23.258l-.011.002-.071.035-.02.004-.014-.004-.071-.035c-.01-.004-.019-.001-.024.005l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427c-.002-.01-.009-.017-.017-.018m.265-.113-.013.002-.185.093-.01.01-.003.011.018.43.005.012.008.007.201.093c.012.004.023 0 .029-.008l.004-.014-.034-.614c-.003-.012-.01-.02-.02-.022m-.715.002a.023.023 0 0 0-.027.006l-.006.014-.034.614c0 .012.007.02.017.024l.015-.002.201-.093.01-.008.004-.011.017-.43-.003-.012-.01-.01z'/><path fill='currentColor' d='M2 12.08c-.006-.862.91-1.356 1.618-.975l.095.058 2.678 1.804c.972.655.377 2.143-.734 2.007l-.117-.02-1.063-.234a8.002 8.002 0 0 0 14.804.605 1 1 0 0 1 1.82.828c-1.987 4.37-6.896 6.793-11.687 5.509A10.003 10.003 0 0 1 2 12.08m.903-4.228C4.89 3.482 9.799 1.06 14.59 2.343a10.002 10.002 0 0 1 7.414 9.581c.007.863-.91 1.358-1.617.976l-.096-.058-2.678-1.804c-.972-.655-.377-2.143.734-2.007l.117.02 1.063.234A8.002 8.002 0 0 0 4.723 8.68a1 1 0 1 1-1.82-.828'/></g></svg>",
+    field:"repairing",
+    label:"正在修复"
+  },
+  {
+    bg:"#66bb6a30",
+    color:"#81c784",
+    iconHtml:"<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><g id=\"check_line\" fill='none' fill-rule='evenodd'><path d='M24 0v24H0V0zM12.593 23.258l-.011.002-.071.035-.02.004-.014-.004-.071-.035c-.01-.004-.019-.001-.024.005l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427c-.002-.01-.009-.017-.017-.018m.265-.113-.013.002-.185.093-.01.01-.003.011.018.43.005.012.008.007.201.093c.012.004.023 0 .029-.008l.004-.014-.034-.614c-.003-.012-.01-.02-.02-.022m-.715.002a.023.023 0 0 0-.027.006l-.006.014-.034.614c0 .012.007.02.017.024l.015-.002.201-.093.01-.008.004-.011.017-.43-.003-.012-.01-.01z'/><path fill='currentColor' d='M21.192 5.465a1 1 0 0 1 0 1.414L9.95 18.122a1.1 1.1 0 0 1-1.556 0l-5.586-5.586a1 1 0 1 1 1.415-1.415l4.95 4.95L19.777 5.465a1 1 0 0 1 1.414 0Z'/></g></svg>",
+    
+    field:"fixed",
+    label:"已修复"
+  },
+  {
+    bg:"#ffa72630",
+    color:"#ffa726",
+    iconHtml:"<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><g id=\"question_2_line\" fill='none' fill-rule='nonzero'><path d='M24 0v24H0V0zM12.594 23.258l-.012.002-.071.035-.02.004-.014-.004-.071-.036q-.016-.004-.024.006l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427q-.004-.016-.016-.018m.264-.113-.014.002-.184.093-.01.01-.003.011.018.43.005.012.008.008.201.092q.019.005.029-.008l.004-.014-.034-.614q-.005-.019-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014-.034.614q.001.018.017.024l.015-.002.201-.093.01-.008.003-.011.018-.43-.003-.012-.01-.01z'/><path fill='currentColor' d='M12.004 19a1 1 0 0 1 .116 1.993L12 21a1 1 0 0 1-.117-1.993zM12 3a6 6 0 0 1 6 6c0 1.61-.957 3.105-2.424 4.022l-.203.122c-.665.379-1.28.83-1.719 1.335-.433.5-.654 1.002-.654 1.521v.5a1 1 0 1 1-2 0V16c0-1.138.498-2.087 1.144-2.831.64-.738 1.464-1.321 2.238-1.763C15.465 10.788 16 9.831 16 9a4 4 0 0 0-8 0 1 1 0 0 1-2 0 6 6 0 0 1 6-6'/></g></svg>",
+    field:"cannotReproduce",
+    label:"无法复现"
+  },
+  {
+    bg:"#29b6f630",
+    color:"#29b6f6",
+    iconHtml:"<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><g id=\"documents_line\" fill='none' fill-rule='evenodd'><path d='M24 0v24H0V0zM12.594 23.258l-.012.002-.071.035-.02.004-.014-.004-.071-.036c-.01-.003-.019 0-.024.006l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427c-.002-.01-.009-.017-.016-.018m.264-.113-.014.002-.184.093-.01.01-.003.011.018.43.005.012.008.008.201.092c.012.004.023 0 .029-.008l.004-.014-.034-.614c-.003-.012-.01-.02-.02-.022m-.715.002a.023.023 0 0 0-.027.006l-.006.014-.034.614c0 .012.007.02.017.024l.015-.002.201-.093.01-.008.003-.011.018-.43-.003-.012-.01-.01z'/><path fill='currentColor' d='M15.586 2A2 2 0 0 1 17 2.586L20.414 6A2 2 0 0 1 21 7.414V16a2 2 0 0 1-2 2h-2v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2V4a2 2 0 0 1 2-2zM8 8H6v12h9v-2h-5a2 2 0 0 1-2-2zm6-4h-4v12h9V9h-3.5a1.5 1.5 0 0 1-1.493-1.356L14 7.5zm2 .414V7h2.586z'/></g></svg>",
+    field:"duplicate",
+    label:"重复提交"
+  }
+];
+
+let imgLightOk = false;
+let imgDarkOk = false;
+let lineChartIns = null;
+let pieChartIns = null;
+let bugList = [];
+
+// 渲染统计卡片
+function renderStatCards(stat) {
+  const wrap = document.getElementById("statCardWrap");
+  wrap.innerHTML = "";
+  statCardMeta.forEach(item => {
+    const val = stat[item.field] || 0;
+    const html = `
+    <div class="rounded-[12px] backdrop-blur-[6px] bg-white/40 dark:bg-black/40 p-6 shadow-xl flex flex-col gap-3">
+      <div class="w-14 h-14 rounded-full flex items-center justify-center text-3xl" style="background:${item.bg};color:${item.color}">
+        ${item.iconHtml}
+      </div>
+      <div class="text-5xl font-medium leading-none">${val}</div>
+      <div class="text-base opacity-80">${item.label}</div>
+    </div>
+    `;
+    wrap.innerHTML += html;
+  });
+}
+
+// 渲染处理人工作量列表
+function renderHandlerList() {
+  const wrap = document.getElementById("handlerWrap");
+  wrap.innerHTML = "";
+  const handlerList = [
+    {
+      name:"遥刃",
+      homeUrl:"https://shequ.codemao.cn/user/1668966051",
+      total:3,
+      pending:1,
+      repairing:1,
+      fixed:1,
+      cannotReproduce:0,
+      duplicate:0
+    },
+    {
+      name:"寒假工1",
+      homeUrl:"https://shequ.codemao.cn/user/523865639",
+      total:0,
+      pending:0,
+      repairing:0,
+      fixed:0,
+      cannotReproduce:0,
+      duplicate:0
+    },
+    {
+      name:"猿猴",
+      homeUrl:"https://shequ.codemao.cn/user/xxxxxxx",
+      total:0,
+      pending:0,
+      repairing:0,
+      fixed:0,
+      cannotReproduce:0,
+      duplicate:0
+    }
+  ];
+
+  handlerList.forEach(h => {
+    const total = h.total || 0;
+    let pRed = total>0 ? (h.pending / total *100).toFixed(2) : 0;
+    let pYellow = total>0 ? (h.repairing / total *100).toFixed(2):0;
+    let pGreen = total>0 ? (h.fixed / total *100).toFixed(2):0;
+    let pGrey = total>0 ? (h.cannotReproduce / total *100).toFixed(2):0;
+    let pPurple = total>0 ? (h.duplicate / total *100).toFixed(2):0;
+
+    const html = `
+    <div class="rounded-[12px] backdrop-blur-[6px] bg-white/40 dark:bg-black/40 p-4 shadow-xl flex flex-col gap-3.5">
+        <div class="flex justify-between items-center">
+          <span class="text-lg font-medium">${h.name}</span>
+          <a href="${h.homeUrl}" class="text-indigo-400 text-lg" target="_blank">查看主页</a>
+        </div>
+        <div class="handler-progress-outer">
+          <div class="progress-seg seg-red" style="width:${pRed}%"></div>
+          <div class="progress-seg seg-yellow" style="width:${pYellow}%"></div>
+          <div class="progress-seg seg-green" style="width:${pGreen}%"></div>
+          <div class="progress-seg seg-grey" style="width:${pGrey}%"></div>
+          <div class="progress-seg seg-purple" style="width:${pPurple}%"></div>
+        </div>
+        <div class="grid grid-cols-6 gap-1">
+          <div class="text-center">
+            <div class="text-sm opacity-85 mb-1">总数</div>
+            <div class="text-xl">${h.total}</div>
+          </div>
+          <div class="text-center">
+            <div class="text-sm opacity-85 mb-1">待处理</div>
+            <div class="text-xl">${h.pending}</div>
+          </div>
+          <div class="text-center">
+            <div class="text-sm opacity-85 mb-1">修复中</div>
+            <div class="text-xl">${h.repairing}</div>
+          </div>
+          <div class="text-center">
+            <div class="text-sm opacity-85 mb-1">已修复</div>
+            <div class="text-xl">${h.fixed}</div>
+          </div>
+          <div class="text-center">
+            <div class="text-sm opacity-85 mb-1">无法复现</div>
+            <div class="text-xl">${h.cannotReproduce}</div>
+          </div>
+          <div class="text-center">
+            <div class="text-sm opacity-85 mb-1">重复</div>
+            <div class="text-xl">${h.duplicate}</div>
+          </div>
+        </div>
+      </div>
+    `;
+    wrap.innerHTML += html;
+  });
+}
+
+// 获取周一时间戳
+function getWeekMonday(timestamp){
+  const d = new Date(timestamp);
+  const day = d.getDay() || 7;
+  d.setDate(d.getDate() - day + 1);
+  d.setHours(0,0,0,0);
+  return d.getTime();
+}
+
+// 接口加载数据
+async function loadBugData() {
+  try {
+    const workerUrl = "https://bugapi.originallyxs.cc.cd";
+    const resp = await fetch(workerUrl);
+    const result = await resp.json();
+
+    if (!result.ok) {
+      throw new Error(result.msg || "接口请求失败");
+    }
+
+    bugList = result.data || [];
+    const total = result.total || bugList.length;
+
+    let pending = 0, repairing = 0, fixed = 0, cannotReproduce = 0, duplicate = 0;
+    bugList.forEach(bug => {
+      const status = bug.fields.bugStatus;
+      switch (status) {
+        case 0: pending++; break;
+        case 1: repairing++; break;
+        case 2: fixed++; break;
+        case 3: cannotReproduce++; break;
+        case 4: duplicate++; break;
+      }
+    });
+
+    renderStatCards({ total, pending, repairing, fixed, cannotReproduce, duplicate });
+    initCharts();
+
+  } catch (err) {
+    renderStatCards({ total: 3, pending: 1, repairing: 1, fixed: 1, cannotReproduce: 0, duplicate: 0 });
+    initCharts();
+  } finally {
+    // ✅接口渲染全部完成之后再关闭loading，不再走window.load
+    const mask = document.getElementById('loading-mask');
+    if(mask){
+      mask.classList.add('fade-out');
+      setTimeout(()=> mask.remove(),800);
+    }
+  }
+}
+
+// 初始化图表
+// 折线图：从【当前日期】向前取最多10周，按自然周（周一为一周起点）聚合数据
+function initCharts() {
+  const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  lineChartIns = echarts.init(document.getElementById('lineChart'));
+  pieChartIns = echarts.init(document.getElementById('pieChart'));
+
+  const textColor = isDarkMode ? '#ffffff' : '#1f2937';
+  const axisLineColor = isDarkMode ? '#ffffff1f' : '#0000001f';
+  const fontFamilyStr = 'CurrentFont, sans-serif';
+
+  // --------饼图数据 分类统计--------
+  const typeMap = {
+    0: "其他",
+    1: "UI界面",
+    2: "安全问题",
+    3: "性能问题",
+    4: "网络问题"
+  };
+  const typeColorMap = {
+    0: "#ffd54f",
+    1: "#e57373",
+    2: "#ba6ac8",
+    3: "#81c784",
+    4: "#4fc3f7"
+  };
+  const typeCount = {};
+  bugList.forEach(bug => {
+    const type = bug.fields.bugType;
+    typeCount[type] = (typeCount[type] || 0) + 1;
+  });
+  const pieData = Object.entries(typeCount).map(([type, count]) => ({
+    name: typeMap[type] || "未知",
+    value: count,
+    itemStyle: { color: typeColorMap[type] || "#9e9e9e" }
+  }));
+
+  // --------折线：最近10周，周一作为周标识，从本周向前倒推--------
+  const now = Date.now();
+  const thisMonday = getWeekMonday(now);
+  const weekList = [];
+  // 生成最近10周时间轴
+  for(let i = 9; i >= 0; i--){
+    const t = thisMonday - (i * 7 * 24 * 3600 * 1000);
+    weekList.push(t);
+  }
+  // 初始化每周计数
+  const weekData = weekList.map(()=>({new:0,fixed:0}));
+
+  bugList.forEach(bug=>{
+    const submitTs = bug.fields.submitTime * 1000;
+    const bugMondayTs = getWeekMonday(submitTs);
+    const idx = weekList.indexOf(bugMondayTs);
+    if(idx !== -1){
+      weekData[idx].new +=1;
+      if(bug.fields.bugStatus ===2){
+        weekData[idx].fixed +=1;
+      }
+    }
+  });
+
+  const xData = weekList.map(ts=>{
+    const d = new Date(ts);
+    return `${d.getMonth()+1}/${d.getDate()}`;
+  });
+  const newBugData = weekData.map(d=>d.new);
+  const fixedBugData = weekData.map(d=>d.fixed);
+
+  lineChartIns.setOption({
+    backgroundColor: 'transparent',
+    textStyle: {
+      fontFamily: fontFamilyStr,
+      color: textColor
+    },
+    tooltip: {
+      trigger: 'axis',
+      textStyle: {
+        color: textColor,
+        fontFamily: fontFamilyStr
+      },
+      backgroundColor: isDarkMode ? '#0000008a' : '#ffffff8a',
+      borderColor: isDarkMode ? '#ffffffaa' : '#000000aa',
+    },
+    legend: {
+      data: ['新增Bug', '已修复'],
+      top: 10,
+      textStyle: {
+        color: textColor,
+        fontFamily: fontFamilyStr
+      }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '12%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: xData,
+      axisLine: { lineStyle: { color: axisLineColor } },
+      axisTick: { lineStyle: { color: axisLineColor } },
+      splitLine: { lineStyle: { color: axisLineColor } },
+      axisLabel: {
+        color: textColor,
+        fontFamily: fontFamilyStr
+      }
+    },
+    yAxis: {
+      type: 'value',
+      axisLine: { lineStyle: { color: axisLineColor } },
+      axisTick: { lineStyle: { color: axisLineColor } },
+      splitLine: { lineStyle: { color: axisLineColor } },
+      axisLabel: {
+        color: textColor,
+        fontFamily: fontFamilyStr
+      }
+    },
+    series: [
+      {
+        name: '新增Bug',
+        type: 'line',
+        smooth: true,
+        symbol: 'circle',
+        areaStyle: { opacity: 0.2 },
+        color: '#9575cd',
+        data: newBugData
+      },
+      {
+        name: '已修复',
+        type: 'line',
+        smooth: true,
+        symbol: 'circle',
+        areaStyle: { opacity: 0.2 },
+        color: '#81c784',
+        data: fixedBugData
+      }
+    ]
+  });
+
+  pieChartIns.setOption({
+    backgroundColor: 'transparent',
+    textStyle: {
+      fontFamily: fontFamilyStr,
+      color:textColor
+    },
+    tooltip: {
+      trigger: 'item',
+      textStyle: {
+        color: textColor,
+        fontFamily: fontFamilyStr
+      },
+      backgroundColor: isDarkMode ? '#0000008a' : '#ffffff8a',
+      borderColor: isDarkMode ? '#ffffffaa' : '#000000aa',
+    },
+    legend: {
+      orient: 'vertical',
+      right: 10,
+      top: 'center',
+      textStyle: {
+        color: textColor,
+        fontFamily: fontFamilyStr
+      }
+    },
+    series: [
+      {
+        type: 'pie',
+        radius: ['40%', '70%'],
+        center: ['45%', '55%'],
+        itemStyle: {
+          borderColor: 'transparent'
+        },
+        label: {
+          textStyle: {
+            fontFamily: fontFamilyStr,
+            color:textColor
+          }
+        },
+        data: pieData
+      }
+    ]
+  });
+
+  window.addEventListener('resize', function () {
+    lineChartIns?.resize();
+    pieChartIns?.resize();
+  });
+
+  // 跟随系统明暗切换重绘图表
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  mediaQuery.removeEventListener('change', initCharts);
+  mediaQuery.addEventListener('change', () => {
+    initCharts();
+  });
+}
+
+function checkBothImageReady() {
+  if (imgLightOk && imgDarkOk) {
+    const footerDom = document.getElementById('loadingFooter');
+    if (footerDom) footerDom.classList.add('show');
+  }
+}
+
+function lightImgLoad() {
+  imgLightOk = true;
+  checkBothImageReady();
+}
+
+function darkImgLoad() {
+  imgDarkOk = true;
+  checkBothImageReady();
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  renderHandlerList();
+  loadBugData();
+
+  const lightImg = document.getElementById('imgLight');
+  const darkImg = document.getElementById('imgDark');
+  if (lightImg) lightImg.onload = lightImgLoad;
+  if (darkImg) darkImg.onload = darkImgLoad;
+
+  if (lightImg?.complete) lightImgLoad();
+  if (darkImg?.complete) darkImgLoad();
+});
+
+</script>
+</body>
+</html>
