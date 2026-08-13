@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
@@ -103,8 +103,8 @@
       font-size: 0.95rem;
     }
     .dark .form-input {
-      background-color: rgba(0,0,0,0.40);
-      border-color: rgba(255,255,255,0.16);
+      background-color: rgba(40,42,80,0.45);
+      border-color: rgba(124, 127, 255, 0.28);
       color:#ffffff;
     }
     .form-input:hover {
@@ -112,7 +112,7 @@
       background-color:rgba(255,255,255,0.72);
     }
     .dark .form-input:hover {
-      background-color:rgba(0,0,0,0.48);
+      background-color:rgba(50,53,95,0.52);
     }
     .form-input:focus {
       border-color:#5C6BC0;
@@ -120,8 +120,8 @@
       background-color:rgba(255,255,255,0.80);
     }
     .dark .form-input:focus {
-      background-color:rgba(0,0,0,0.54);
-      box-shadow: 0 0 0 3px rgba(92, 107, 192, 0.35);
+      background-color:rgba(58,60,110,0.58);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35), 0 0 8px rgba(99,102,241,0.20);
     }
     textarea.form-input {
       min-height:140px;
@@ -129,6 +129,63 @@
     }
     .form-label {
       @apply block mb-1.5 text-sm;
+    }
+    .form-input::placeholder {
+      color:#777777;
+    }
+    .dark .form-input::placeholder {
+      color:#a2a6dd;
+      opacity:0.85;
+    }
+
+    /*自定义下拉框*/
+    .custom-select-wrap{
+      position:relative;
+    }
+    .custom-select-trigger{
+      width:100%;
+      padding:0.85rem 1.1rem;
+      border-radius:16px;
+      background-color:rgba(40,42,80,0.45);
+      border:1px solid rgba(124,127,255,0.28);
+      color:#ffffff;
+      font-size:0.95rem;
+      cursor:pointer;
+      transition:all 0.28s ease;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .custom-select-trigger:hover{
+      background-color:rgba(50,53,95,0.52);
+    }
+    .custom-select-trigger.open{
+      border-color:#7c7fff;
+      box-shadow:0 0 0 3px rgba(99, 102, 241, 0.35), 0 0 8px rgba(99,102,241,0.20);
+    }
+    .custom-select-dropdown{
+      position:absolute;
+      top:calc(100% + 6px);
+      left:0;
+      right:0;
+      background-color:rgba(32,34,68,0.88);
+      backdrop-filter:blur(8px);
+      border:1px solid rgba(124,127,255,0.26);
+      border-radius:14px;
+      z-index:10;
+      overflow:hidden;
+    }
+    .custom-select-option{
+      padding:0.75rem 1.1rem;
+      color:#fff;
+      cursor:pointer;
+      transition:background 0.2s;
+    }
+    .custom-select-option:hover{
+      background-color:rgba(99,102,241,0.22);
+    }
+    .custom-select-option.selected{
+      background-color:rgba(99,102,241,0.30);
     }
   </style>
 </head>
@@ -176,18 +233,25 @@
         <input type="text" name="bugTitle" class="form-input" placeholder="简短描述出现什么问题" required>
       </div>
 
-      <!--3.分类下拉-->
+      <!--3.自定义Bug分类下拉（替换原生select）-->
       <div class="mb-5">
         <label class="form-label serif">Bug分类 <span class="text-red-500">*</span></label>
-        <select name="bugCategory" class="form-input" required>
-          <option value="">请选择分类</option>
-          <option value="UI界面">UI界面</option>
-          <option value="网络问题">网络问题</option>
-          <option value="功能异常">功能异常</option>
-          <option value="性能卡顿">性能卡顿</option>
-          <option value="安全问题">安全问题</option>
-          <option value="其他">其他</option>
-        </select>
+        <div class="custom-select-wrap">
+          <div class="custom-select-trigger" id="catTrigger">
+            <span id="catText">请选择分类</span>
+            <span>▼</span>
+          </div>
+          <div class="custom-select-dropdown hidden" id="catDrop">
+            <div class="custom-select-option" data-val="UI界面">UI界面</div>
+            <div class="custom-select-option" data-val="网络问题">网络问题</div>
+            <div class="custom-select-option" data-val="功能异常">功能异常</div>
+            <div class="custom-select-option" data-val="性能卡顿">性能卡顿</div>
+            <div class="custom-select-option" data-val="安全问题">安全问题</div>
+            <div class="custom-select-option" data-val="其他">其他</div>
+          </div>
+          <!--隐藏input，表单提交取值-->
+          <input type="hidden" name="bugCategory" id="bugCategory" value="" required>
+        </div>
       </div>
 
       <!--4.邮箱，提示登录后自动填充-->
@@ -224,7 +288,7 @@
 
 <script>
 tailwind.config = {
-  darkMode: 'media',
+  darkMode: 'class',
   theme: {
     colors: {
       indigo: {
@@ -266,15 +330,60 @@ document.addEventListener('DOMContentLoaded', function () {
   if (lightImg?.complete) lightImgLoad();
   if (darkImg?.complete) darkImgLoad();
 
+  // =====自定义下拉逻辑=====
+  const trigger = document.getElementById('catTrigger');
+  const drop = document.getElementById('catDrop');
+  const catText = document.getElementById('catText');
+  const hiddenInput = document.getElementById('bugCategory');
+  const options = Array.from(drop.querySelectorAll('.custom-select-option'));
+
+  //点击展开收起
+  trigger.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    drop.classList.toggle('hidden');
+    trigger.classList.toggle('open');
+  });
+  //点击选项赋值
+  options.forEach(opt=>{
+    opt.addEventListener('click',(e)=>{
+      e.stopPropagation();
+      const val = opt.dataset.val;
+      hiddenInput.value = val;
+      catText.innerText = val;
+      //清除选中标记
+      options.forEach(o=>o.classList.remove('selected'));
+      opt.classList.add('selected');
+      drop.classList.add('hidden');
+      trigger.classList.remove('open');
+    })
+  })
+  //点击页面任意地方关闭下拉
+  document.body.addEventListener('click',()=>{
+    drop.classList.add('hidden');
+    trigger.classList.remove('open');
+  })
+
+  //重置表单时恢复下拉提示文字
+  document.querySelector('button[type="reset"]').addEventListener('click',()=>{
+    hiddenInput.value = '';
+    catText.innerText = "请选择分类";
+    options.forEach(o=>o.classList.remove('selected'));
+  })
+
   // 表单提交事件
   const form = document.getElementById('bugSubmitForm');
   form.addEventListener('submit',function(e){
     e.preventDefault();
+    //校验下拉必须选择
+    if(!hiddenInput.value){
+      alert("请选择Bug分类");
+      return;
+    }
     const formData = new FormData(form);
     const payload = Object.fromEntries(formData);
     console.log("提交表单数据：",payload);
 
-    // =========这里替换为后端fetch axios提交接口========
+    // =========后端接口暂不接入========
     alert(`表单校验通过！\n操作系统：${payload.osVersion}\n标题：${payload.bugTitle}\n分类：${payload.bugCategory}\n邮箱：${payload.email}\n\n此处对接后端接口保存数据`);
 
     // 提交成功后跳转回列表页
